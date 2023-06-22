@@ -33,8 +33,6 @@ impl Machinery {
             }),
         );
 
-        println!("Listening on {:?}", &addr);
-
         axum::Server::bind(&addr)
             .serve(app.into_make_service())
             .await?;
