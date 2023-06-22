@@ -1,4 +1,6 @@
-use machinery::{error::bail, Result, Void};
+use machinery::{error::bail, inject, Result, Void};
+
+use crate::user::User;
 
 #[machinery::message]
 pub enum Thing {
@@ -15,12 +17,14 @@ pub struct Greeting {
 
 #[machinery::service]
 pub async fn hello(message: String) -> Result<Greeting> {
+    let user = inject!(User)?;
+
     if message == "Laur" {
         bail!("I dont like you, {}", message);
     }
 
     Greeting {
-        message: format!("Hello, {}", message),
+        message: format!("Hello, {} {}", message, user.id),
         thing: Thing::A.into(),
     }
     .into()

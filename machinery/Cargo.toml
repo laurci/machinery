@@ -3,6 +3,10 @@ name = "machinery"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["standalone"]
+standalone = []
+lambda = []
 
 [dependencies]
 serde = { version = "1.0.164", features = ["derive"] }
@@ -11,5 +15,5 @@ async-trait = "0.1.68"
 serde_json = { version = "1.0" }
 axum = "0.6.18"
 machinery-meta = { path = "../machinery-meta" }
-
+log = "0.4.19"
 

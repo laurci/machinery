@@ -188,7 +188,7 @@ impl Pipeline {
             let call_name = full_name.replace("crate::", "");
 
             handlers.push(format!(
-                "\"{call_name}\" => handle_{ident_name}(json_input).await,"
+                "\"{call_name}\" => handle_{ident_name}(&ctx, json_input).await,"
             ));
 
             let args = service.arguments.clone().into_iter().map(|arg| {
@@ -199,8 +199,8 @@ impl Pipeline {
             if args.len() == 0 {
                 code.push_str(&format!(
                     "
-    async fn handle_{ident_name}(_json_input: String) -> String {{
-        let res_output = {full_name}().await;
+    async fn handle_{ident_name}(ctx: &machinery::context::Context, _json_input: String) -> String {{
+        let res_output = {full_name}(ctx).await;
         if res_output.is_err()  {{
             return format!(\"{{{{ \\\"error\\\": \\\"{{}}\\\" }}}}\", res_output.unwrap_err());
         }}
@@ -228,14 +228,14 @@ impl Pipeline {
 
                 code.push_str(&format!(
                     "
-    async fn handle_{ident_name}(json_input: String) -> String {{
+    async fn handle_{ident_name}(ctx: &machinery::context::Context, json_input: String) -> String {{
         let rest_input = machinery::json::from_str::<({arg_types_str},)>(&json_input);
         if rest_input.is_err() {{
             return \"{{{{ \\\"error\\\": \\\"Failed to deserialize input\\\" }}}}\".to_owned();
         }}
         let ({arg_names_str},) = rest_input.unwrap();
 
-        let res_output = {full_name}({arg_names_str}).await;
+        let res_output = {full_name}(ctx, {arg_names_str}).await;
         if res_output.is_err() {{
             return format!(\"{{{{ \\\"error\\\": \\\"{{}}\\\" }}}}\", res_output.unwrap_err());
         }}
@@ -257,7 +257,7 @@ impl Pipeline {
         code.push_str(
             format!(
                 "
-    pub async fn handle(fn_name: String, json_input: String) -> String {{
+    pub async fn handle(ctx: machinery::context::Context, fn_name: String, json_input: String) -> String {{
         match fn_name.as_str() {{
 {}
             _ => return \"{{ \\\"error\\\": \\\"Unknown function\\\" }}\".to_owned(),
