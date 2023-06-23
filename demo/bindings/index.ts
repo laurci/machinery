@@ -7,6 +7,7 @@ AnalyzeResult {
             location: "crate::api::greeting",
             arguments: [
                 "message: String",
+                "input: GreetingInput",
             ],
             return_type: "Result < Greeting >",
         },
@@ -29,6 +30,12 @@ AnalyzeResult {
             name: "Greeting",
             location: "crate::api::greeting",
             code: "export interface Greeting {\n\tmessage: String,\n\tthing: Option < Thing >,\n}\n",
+        },
+        Message {
+            kind: Struct,
+            name: "GreetingInput",
+            location: "crate::api::greeting",
+            code: "export interface GreetingInput {\n\tname: String,\n}\n",
         },
     ],
 }
@@ -80,9 +87,13 @@ export interface Greeting {
 	thing: Option < Thing >,
 }
 
+export interface GreetingInput {
+	name: String,
+}
+
 export function createClient(transport: Transport) {
 	let obj0 = {};
-	let obj1 = Object.assign(obj0, { api: { greeting: { async hello(message: String): Promise<Result < Greeting >> { return handleResult(await transport.send("api::greeting::hello", JSON.stringify([message ?? null]))); } }}});
+	let obj1 = Object.assign(obj0, { api: { greeting: { async hello(message: String, input: GreetingInput): Promise<Result < Greeting >> { return handleResult(await transport.send("api::greeting::hello", JSON.stringify([message ?? null, input ?? null]))); } }}});
 	let obj2 = Object.assign(obj1, { api: { greeting: { async hi(): Promise<Result < Void >> { return handleResult(await transport.send("api::greeting::hi", JSON.stringify([]))); } }}});
 	return obj2;
 };

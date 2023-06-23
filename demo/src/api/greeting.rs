@@ -15,16 +15,21 @@ pub struct Greeting {
     thing: Option<Thing>,
 }
 
+#[machinery::message]
+pub struct GreetingInput {
+    name: String,
+}
+
 #[machinery::service]
-pub async fn hello(message: String) -> Result<Greeting> {
+pub async fn hello(message: String, input: GreetingInput) -> Result<Greeting> {
     let user = inject!(User)?;
 
-    if message == "Laur" {
-        bail!("I dont like you, {}", message);
+    if input.name == "Laurentiu" {
+        bail!("You are not welcome here!");
     }
 
     Greeting {
-        message: format!("Hello, {} {}", message, user.id),
+        message: format!("{} {} {}", message, input.name, user.id),
         thing: Thing::A.into(),
     }
     .into()

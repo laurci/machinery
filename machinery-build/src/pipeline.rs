@@ -265,13 +265,13 @@ impl Pipeline {
                     .collect::<Vec<_>>();
                 let arg_names_str = arg_names.join(", ");
 
-                let arg_types = args.map(|(_, ty)| ty).collect::<Vec<_>>();
-                let arg_types_str = arg_types.join(", ");
+                // let arg_types = args.map(|(_, ty)| ty).collect::<Vec<_>>();
+                // let arg_types_str = arg_types.join(", ");
 
                 code.push_str(&format!(
                     "
     async fn handle_{ident_name}(ctx: &machinery::context::Context, json_input: String) -> String {{
-        let rest_input = machinery::json::from_str::<({arg_types_str},)>(&json_input);
+        let rest_input = machinery::json::from_str(&json_input);
         if rest_input.is_err() {{
             return \"{{{{ \\\"error\\\": \\\"Failed to deserialize input\\\" }}}}\".to_owned();
         }}
