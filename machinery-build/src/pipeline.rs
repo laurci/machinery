@@ -254,7 +254,7 @@ impl Pipeline {
             return format!(\"{{{{ \\\"result\\\": {{}} }}}}\", output.unwrap());
         }}
 
-        return \"{{{{ \\\"error\\\": \\\"Failed to serialize output\\\" }}}}\".to_owned();
+        return \"{{ \\\"error\\\": \\\"Failed to serialize output\\\" }}\".to_owned();
     }}
 "
                 ));
@@ -273,7 +273,7 @@ impl Pipeline {
     async fn handle_{ident_name}(ctx: &machinery::context::Context, json_input: String) -> String {{
         let rest_input = machinery::json::from_str(&json_input);
         if rest_input.is_err() {{
-            return \"{{{{ \\\"error\\\": \\\"Failed to deserialize input\\\" }}}}\".to_owned();
+            return \"{{ \\\"error\\\": \\\"Failed to deserialize input\\\" }}\".to_owned();
         }}
         let ({arg_names_str},) = rest_input.unwrap();
 
@@ -289,7 +289,7 @@ impl Pipeline {
             return format!(\"{{{{ \\\"result\\\": {{}} }}}}\", output.unwrap());
         }}
 
-        return \"{{{{ \\\"error\\\": \\\"Failed to serialize output\\\" }}}}\".to_owned();
+        return \"{{ \\\"error\\\": \\\"Failed to serialize output\\\" }}\".to_owned();
     }}
 "
                 ));
