@@ -17,29 +17,29 @@ function handleResult(result: string) {
 	return json.result;
 }
 
-type Option<T> = T | undefined;
-type Result<T> = T;
-type Vec<T> = T[];
+export type Option<T> = T | undefined;
+export type Result<T> = T;
+export type Vec<T> = T[];
 
-type String = string;
-type Void = void;
+export type String = string;
+export type Void = void;
 
-type u8 = number;
-type u16 = number;
-type u32 = number;
-type u64 = number;
-type usize = number;
+export type u8 = number;
+export type u16 = number;
+export type u32 = number;
+export type u64 = number;
+export type usize = number;
 
-type i8 = number;
-type i16 = number;
-type i32 = number;
-type i64 = number;
-type isize = number;
+export type i8 = number;
+export type i16 = number;
+export type i32 = number;
+export type i64 = number;
+export type isize = number;
 
-type f32 = number;
-type f64 = number;
+export type f32 = number;
+export type f64 = number;
 
-type bool = boolean;
+export type bool = boolean;
 ";
 
 #[derive(Debug)]
@@ -64,6 +64,10 @@ pub struct Pipeline {
     base_crate_path: String,
     files: Vec<String>,
     export_dir: Option<String>,
+    debug_comments: bool,
+    custom_types: Vec<String>,
+    custom_header: Option<String>,
+    custom_footer: Option<String>,
 }
 
 impl Pipeline {
@@ -83,8 +87,32 @@ impl Pipeline {
         self
     }
 
+    pub fn enable_debug_comments(&mut self) -> &mut Self {
+        self.debug_comments = true;
+
+        self
+    }
+
     pub fn with_base_crate_path(&mut self, path: &str) -> &mut Self {
         self.base_crate_path = path.to_owned();
+
+        self
+    }
+
+    pub fn with_custom_types(&mut self, types: Vec<&str>) -> &mut Self {
+        self.custom_types = types.into_iter().map(|s| s.to_owned()).collect::<Vec<_>>();
+
+        self
+    }
+
+    pub fn with_custom_header(&mut self, header: &str) -> &mut Self {
+        self.custom_header = Some(header.to_owned());
+
+        self
+    }
+
+    pub fn with_custom_footer(&mut self, footer: &str) -> &mut Self {
+        self.custom_footer = Some(footer.to_owned());
 
         self
     }
@@ -101,8 +129,18 @@ impl Pipeline {
 
         let mut code = String::new();
 
-        code.push_str(&format!("/*\n{:#?}\n*/\n", &result));
+        if self.debug_comments {
+            code.push_str(&format!("/*\n{:#?}\n*/\n", &result));
+        }
+
+        if self.custom_header.is_some() {
+            code.push_str(&self.custom_header.clone().unwrap());
+        }
         code.push_str(HEADER);
+
+        for custom_type in &self.custom_types {
+            code.push_str(&format!("export type {};\n", custom_type));
+        }
 
         for message in &result.messages {
             code.push_str(&message.code);
@@ -160,6 +198,10 @@ impl Pipeline {
         }
 
         code.push_str(&format!("\treturn obj{};\n}};\n", obj_count - 1));
+
+        if self.custom_footer.is_some() {
+            code.push_str(&self.custom_footer.clone().unwrap());
+        }
 
         std::fs::create_dir_all(export_dir).unwrap();
 
@@ -273,45 +315,6 @@ impl Pipeline {
         std::fs::write(&dest_path, code)
             .map_err(|_| Error::FailedToWriteFile("machinery.rs".to_owned()))?;
 
-        // panic!("{code}");
-
-        //         std::fs::write(
-        //             &dest_path,
-        //             "
-        // mod __machinery {
-        //     async fn handle_hello(json_input: String) -> String {
-        //         let res_input = serde_json::from_str::<(String,)>(&json_input);
-        //         if res_input.is_err() {
-        //             return \"{ \\\"error\\\": \\\"Failed to deserialize input\\\" }\".to_owned();
-        //         }
-        //         let (arg0,) = res_input.unwrap();
-        //
-        //         let res_output = crate::api::greeting::hello(arg0).await;
-        //         if res_output.is_err() {
-        //             return format!(\"{{ \\\"error\\\": \\\"{}\\\" }}\", res_output.unwrap_err());
-        //         }
-        //
-        //         let output = res_output.unwrap();
-        //         let output = serde_json::to_string(&output);
-        //
-        //         if output.is_ok() {
-        //             return format!(\"{{ \\\"result\\\": {} }}\", output.unwrap());
-        //         }
-        //
-        //         \"{ \\\"error\\\": \\\"Failed to serialize output\\\" }\".to_owned()
-        //     }
-        //
-        //     pub async fn handle(fn_name: String, json_input: String) -> String {
-        //         match fn_name.as_str() {
-        //             \"crate::greeting::hello\" => handle_hello(json_input).await,
-        //             _ => \"{ \\\"error\\\": \\\"Unknown function\\\" }\".to_owned(),
-        //         }
-        //     }
-        // }
-        //             ",
-        //         )
-        //         .unwrap();
-
         Ok(())
     }
 
@@ -345,5 +348,9 @@ pub fn default(root_dir: &str) -> Pipeline {
         files: Vec::new(),
         export_dir: None,
         base_crate_path: "crate".to_owned(),
+        debug_comments: false,
+        custom_types: vec![],
+        custom_header: None,
+        custom_footer: None,
     }
 }

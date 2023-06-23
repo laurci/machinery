@@ -33,7 +33,7 @@ AnalyzeResult {
     ],
 }
 */
-
+/* custom header */
 export interface Transport {
 	send(fn: string, args: string): Promise<string>;
 }
@@ -46,29 +46,30 @@ function handleResult(result: string) {
 	return json.result;
 }
 
-type Option<T> = T | undefined;
-type Result<T> = T;
-type Vec<T> = T[];
+export type Option<T> = T | undefined;
+export type Result<T> = T;
+export type Vec<T> = T[];
 
-type String = string;
-type Void = void;
+export type String = string;
+export type Void = void;
 
-type u8 = number;
-type u16 = number;
-type u32 = number;
-type u64 = number;
-type usize = number;
+export type u8 = number;
+export type u16 = number;
+export type u32 = number;
+export type u64 = number;
+export type usize = number;
 
-type i8 = number;
-type i16 = number;
-type i32 = number;
-type i64 = number;
-type isize = number;
+export type i8 = number;
+export type i16 = number;
+export type i32 = number;
+export type i64 = number;
+export type isize = number;
 
-type f32 = number;
-type f64 = number;
+export type f32 = number;
+export type f64 = number;
 
-type bool = boolean;
+export type bool = boolean;
+export type Custom = string;
 export type Thing = 
 	"A" |
 	"B" |
@@ -85,3 +86,4 @@ export function createClient(transport: Transport) {
 	let obj2 = Object.assign(obj1, { api: { greeting: { async hi(): Promise<Result < Void >> { return handleResult(await transport.send("api::greeting::hi", JSON.stringify([]))); } }}});
 	return obj2;
 };
+/* custom_footer */
