@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
+default = ["debug"]
+debug = ["machinery/standalone"]
 lambda = ["machinery/lambda"] # for us but also for machinery
 
 [dependencies]

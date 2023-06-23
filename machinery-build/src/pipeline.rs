@@ -2,7 +2,9 @@ use glob_match::glob_match;
 use std::path;
 use walkdir::WalkDir;
 
-use crate::analyzer::{analyze_file, AnalyzeResult};
+use crate::analyzer::{analyze_file, AnalyzeResult, Service};
+
+const INTROSPECTION_NAMESPACE: &str = "machinery_introspection";
 
 const HEADER: &str = "
 export interface Transport {
@@ -59,12 +61,14 @@ impl std::fmt::Display for Error {
     }
 }
 
+#[derive(Clone)]
 pub struct Pipeline {
     root_dir: String,
     base_crate_path: String,
     files: Vec<String>,
     export_dir: Option<String>,
     debug_comments: bool,
+    introspection: bool,
     custom_types: Vec<String>,
     custom_header: Option<String>,
     custom_footer: Option<String>,
@@ -89,6 +93,12 @@ impl Pipeline {
 
     pub fn enable_debug_comments(&mut self) -> &mut Self {
         self.debug_comments = true;
+
+        self
+    }
+
+    pub fn enable_introspection(&mut self) -> &mut Self {
+        self.introspection = true;
 
         self
     }
@@ -157,6 +167,10 @@ impl Pipeline {
 
         // create a tree from the services location eg crate::api::greeting::hello -> { crate: { api: { greeting: { hello: {} } } } }
         for service in &result.services {
+            if service.location.starts_with(INTROSPECTION_NAMESPACE) {
+                continue;
+            }
+
             let base_path = service
                 .location
                 .replace(&format!("{}::", &self.base_crate_path), "");
@@ -212,7 +226,7 @@ impl Pipeline {
         Ok(())
     }
 
-    pub fn build_rust_handler(&mut self, result: &AnalyzeResult) -> Result<(), Error> {
+    pub fn build_rust_handler(&mut self, result: &mut AnalyzeResult) -> Result<(), Error> {
         let out_dir = std::env::var_os("OUT_DIR").unwrap();
         let dest_path = std::path::Path::new(&out_dir).join("machinery.rs");
 
@@ -221,6 +235,29 @@ impl Pipeline {
         let mut handlers: Vec<String> = vec![];
 
         code.push_str("mod __machinery {\n");
+
+        if self.introspection {
+            let ts_client_path = self.export_dir.clone().ok_or(Error::MissingExportDir)?;
+            let ts_client_path = path::Path::new(&ts_client_path);
+            let ts_client_path = ts_client_path.join("index.ts").to_str().unwrap().to_owned();
+
+            code.push_str(&format!(
+                "
+    mod machinery_introspection {{
+        pub async fn ts_client(_ctx: &machinery::context::Context) -> machinery::Result<String> {{
+            let code = std::fs::read_to_string(\"{ts_client_path}\")?;
+            Ok(code)
+        }}
+    }}
+"
+            ));
+            result.services.push(Service {
+                name: "ts_client".to_owned(),
+                location: INTROSPECTION_NAMESPACE.to_owned(),
+                arguments: vec![],
+                return_type: "String".to_owned(),
+            });
+        }
 
         for service in &result.services {
             let full_name = &format!("{}::{}", service.location, service.name);
@@ -336,7 +373,7 @@ impl Pipeline {
         }
 
         self.build_ts_client(&combined_result)?;
-        self.build_rust_handler(&combined_result)?;
+        self.build_rust_handler(&mut combined_result)?;
 
         Ok(())
     }
@@ -349,6 +386,7 @@ pub fn default(root_dir: &str) -> Pipeline {
         export_dir: None,
         base_crate_path: "crate".to_owned(),
         debug_comments: false,
+        introspection: false,
         custom_types: vec![],
         custom_header: None,
         custom_footer: None,
