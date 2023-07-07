@@ -4,6 +4,7 @@ fn main() {
     // println!("do nothing");
     let mut build = pipeline::default("./src")
         .add_files("./**/*.rs")
+        .with_base_crate_path("crate::api")
         .export_to_dir("./bindings/")
         .with_custom_types(vec!["Custom = string"])
         .with_custom_header("/* custom header */")

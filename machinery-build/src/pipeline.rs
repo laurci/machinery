@@ -11,6 +11,21 @@ export interface Transport {
 	send(fn: string, args: string): Promise<string>;
 }
 
+const deepAssign: typeof Object.assign = (target: any, ...sources: any[]) => {
+    for (const source of sources) {
+        for (let k in source) {
+            let vs = source[k], vt = target[k];
+            if (Object(vs) == vs && Object(vt) === vt) {
+                target[k] = deepAssign(vt, vs);
+                continue;
+            }
+            target[k] = source[k];
+        }
+    }
+    return target;
+}
+
+
 function handleResult(result: string) {
 	const json = JSON.parse(result);
 	if (json.error) {
@@ -196,7 +211,7 @@ impl Pipeline {
                 .join(", ");
 
             code.push_str(&format!(
-                "\tlet obj{} = Object.assign(obj{}, {} async {}({}): Promise<{}> {{ return handleResult(await transport.send(\"{}\", JSON.stringify([{}]))); }} {});\n",
+                "\tlet obj{} = deepAssign(obj{}, {} async {}({}): Promise<{}> {{ return handleResult(await transport.send(\"{}\", JSON.stringify([{}]))); }} {});\n",
                 obj_count,
                 obj_count - 1,
                 obj_path,

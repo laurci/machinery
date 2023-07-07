@@ -1,18 +1,16 @@
-use machinery::{error::bail, inject, Result, Void};
-
-use crate::user::User;
+use machinery::{error::bail, Result, Void};
 
 #[machinery::message]
-pub enum Thing {
-    A,
-    B,
-    C,
+pub enum TimeOfDay {
+    Morning,
+    Afternoon,
+    Evening,
 }
 
 #[machinery::message]
 pub struct Greeting {
     message: String,
-    thing: Option<Thing>,
+    time_of_day: Option<TimeOfDay>,
 }
 
 #[machinery::message]
@@ -21,21 +19,22 @@ pub struct GreetingInput {
 }
 
 #[machinery::service]
-pub async fn hello(message: String, input: GreetingInput) -> Result<Greeting> {
-    let user = inject!(User)?;
+pub async fn format(message: String, input: GreetingInput) -> Result<Greeting> {
+    // tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
 
-    if input.name == "Laurentiu" {
-        bail!("You are not welcome here!");
+    if input.name == "Laurentiu 4" {
+        bail!("invalid name");
     }
 
     Greeting {
-        message: format!("{} {} {}", message, input.name, user.id),
-        thing: Thing::A.into(),
+        message: format!("{} {}", message, input.name),
+        time_of_day: TimeOfDay::Morning.into(),
     }
     .into()
 }
 
 #[machinery::service]
-pub async fn hi() -> Result<Void> {
+pub async fn say_hi() -> Result<Void> {
+    log::info!("hi from say_hi()");
     Ok(())
 }

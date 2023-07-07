@@ -3,7 +3,7 @@ AnalyzeResult {
     file_location: "crate",
     services: [
         Service {
-            name: "hello",
+            name: "format",
             location: "crate::api::greeting",
             arguments: [
                 "message: String",
@@ -12,7 +12,7 @@ AnalyzeResult {
             return_type: "Result < Greeting >",
         },
         Service {
-            name: "hi",
+            name: "say_hi",
             location: "crate::api::greeting",
             arguments: [],
             return_type: "Result < Void >",
@@ -21,15 +21,15 @@ AnalyzeResult {
     messages: [
         Message {
             kind: Enum,
-            name: "Thing",
+            name: "TimeOfDay",
             location: "crate::api::greeting",
-            code: "export type Thing = \n\t\"A\" |\n\t\"B\" |\n\t\"C\";\n",
+            code: "export type TimeOfDay = \n\t\"Morning\" |\n\t\"Afternoon\" |\n\t\"Evening\";\n",
         },
         Message {
             kind: Struct,
             name: "Greeting",
             location: "crate::api::greeting",
-            code: "export interface Greeting {\n\tmessage: String,\n\tthing: Option < Thing >,\n}\n",
+            code: "export interface Greeting {\n\tmessage: String,\n\ttime_of_day: Option < TimeOfDay >,\n}\n",
         },
         Message {
             kind: Struct,
@@ -44,6 +44,21 @@ AnalyzeResult {
 export interface Transport {
 	send(fn: string, args: string): Promise<string>;
 }
+
+const deepAssign: typeof Object.assign = (target: any, ...sources: any[]) => {
+    for (const source of sources) {
+        for (let k in source) {
+            let vs = source[k], vt = target[k];
+            if (Object(vs) == vs && Object(vt) === vt) {
+                target[k] = deepAssign(vt, vs);
+                continue;
+            }
+            target[k] = source[k];
+        }
+    }
+    return target;
+}
+
 
 function handleResult(result: string) {
 	const json = JSON.parse(result);
@@ -77,14 +92,14 @@ export type f64 = number;
 
 export type bool = boolean;
 export type Custom = string;
-export type Thing = 
-	"A" |
-	"B" |
-	"C";
+export type TimeOfDay = 
+	"Morning" |
+	"Afternoon" |
+	"Evening";
 
 export interface Greeting {
 	message: String,
-	thing: Option < Thing >,
+	time_of_day: Option < TimeOfDay >,
 }
 
 export interface GreetingInput {
@@ -93,8 +108,8 @@ export interface GreetingInput {
 
 export function createClient(transport: Transport) {
 	let obj0 = {};
-	let obj1 = Object.assign(obj0, { api: { greeting: { async hello(message: String, input: GreetingInput): Promise<Result < Greeting >> { return handleResult(await transport.send("api::greeting::hello", JSON.stringify([message ?? null, input ?? null]))); } }}});
-	let obj2 = Object.assign(obj1, { api: { greeting: { async hi(): Promise<Result < Void >> { return handleResult(await transport.send("api::greeting::hi", JSON.stringify([]))); } }}});
+	let obj1 = deepAssign(obj0, { greeting: { async format(message: String, input: GreetingInput): Promise<Result < Greeting >> { return handleResult(await transport.send("api::greeting::format", JSON.stringify([message ?? null, input ?? null]))); } }});
+	let obj2 = deepAssign(obj1, { greeting: { async say_hi(): Promise<Result < Void >> { return handleResult(await transport.send("api::greeting::say_hi", JSON.stringify([]))); } }});
 	return obj2;
 };
 /* custom_footer */
